@@ -62,36 +62,36 @@ int main()
 							{0.241, -0.221, -0.243, 0.134, 1.274, 0.712, 0.423},
 							{0.281, 0.525, 0.719, 0.118, -0.974, 0.808, 0.923},
 							{0.246, -0.301, 0.231, 0.813, -0.702, 1.223, 1.105} };
-	vector<vector<double>> A1{ { 5, 4, 7, 5, 6, 7, 5}, 
-								{4, 12, 8, 7, 8, 8, 6}, 
-								{7, 8, 10, 9, 8, 7, 7}, 
-								{5, 7, 9, 11, 9, 7, 5}, 
-								{6, 8, 8, 9, 10, 8, 9}, 
-								{7, 8, 7, 7, 8, 10, 10}, 
+	vector<vector<double>> A1{ { 5, 4, 7, 5, 6, 7, 5},
+								{4, 12, 8, 7, 8, 8, 6},
+								{7, 8, 10, 9, 8, 7, 7},
+								{5, 7, 9, 11, 9, 7, 5},
+								{6, 8, 8, 9, 10, 8, 9},
+								{7, 8, 7, 7, 8, 10, 10},
 								{5, 6, 7, 5, 9, 10, 10} };
 
-	vector<vector<double>> A2(n+2);
-
-	for (int i = 1; i < 8; ++i) {
-		for (int j = 1; j < 8; ++j) {
-			A2[i][j] = 1 / (i + j - 1);
+	vector<vector<double>> A2(n + 1, vector<double>(n + 1));
+	for (int i = 0; i <= n; ++i) {
+		for (int j = 0; j <= n; ++j) {
+			A2[i][j] = 1.0 / (i + j + 1); 
 		}
 	}
 
-	vector<vector<double>> A3(n+2);
-
-	for (int i = 1; i < 8; ++i) {
-		for (int j = 1; j < 8; ++j) {
-			A3[i][j] = min(i, j) / max(i, j);
+	
+	vector<vector<double>> A3(n + 1, vector<double>(n + 1));
+	for (int i = 0; i <= n; ++i) {
+		for (int j = 0; j <= n; ++j) {
+			int ii = i + 1, jj = j + 1;
+			A3[i][j] = static_cast<double>(min(ii, jj)) / max(ii, jj); 
 		}
 	}
 
-	vector<double> B{0.096, 1.252, 1.024, 1.023, 1.155, 1.937, 1.673};
-	vector<double> B1(n+1);
-	vector<double> B2(n+1);
-	vector<double> B3(n+1);
+	vector<double> B{ 0.096, 1.252, 1.024, 1.023, 1.155, 1.937, 1.673 };
+	vector<double> B1(n + 1);
+	vector<double> B2(n + 1);
+	vector<double> B3(n + 1);
 
-	vector<double> X(n+1);
+	vector<double> X(n + 1);
 
 	for (int i = 0; i < n; ++i) {
 		for (int j = 0; j < n; ++j) {
@@ -99,14 +99,14 @@ int main()
 		}
 	}
 
-	for (int i = 1; i < 8; ++i) {
-		for (int j = 1; j < 8; ++j) {
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
 			B2[i] += A2[i][j];
 		}
 	}
 
-	for (int i = 1; i < 8; ++i) {
-		for (int j = 1; j < 8; ++j) {
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
 			B3[i] += A3[i][j];
 		}
 	}
@@ -114,4 +114,8 @@ int main()
 	gauss(A, B, X, n);
 	cout << endl;
 	gauss(A1, B1, X, n);
+	cout << endl;
+	gauss(A2, B2, X, n);
+	cout << endl;
+	gauss(A3, B3, X, n);
 }
