@@ -7,6 +7,55 @@ using namespace std;
 
 double d, s;
 
+
+void gaussStrai(vector<vector<double>> A, vector<double> B, vector<double> X, int n) {
+	for (int k = 0; k <= n; k++) // прямой ход
+	{
+		for (int j = k + 1; j <= n; j++)
+		{
+			d = A[j][k] / A[k][k]; // формула (1)
+
+			for (int i = k; i <= n; i++)
+			{
+
+				A[j][i] = A[j][i] - d * A[k][i]; // формула (2)
+
+			}
+
+			B[j] = B[j] - d * B[k]; // формула (3)
+
+		}
+
+	}
+}
+
+
+void gaussObr(vector<vector<double>> A, vector<double> B, vector<double> X, int n){
+	for (int k = n; k >= 0; k--) // обратный ход
+	{
+		d = 0;
+
+		for (int j = k + 1; j <= n; j++)
+		{
+
+			s = A[k][j] * X[j]; // формула (4)
+
+			d = d + s; // формула (4)
+
+		}
+
+		X[k] = (B[k] - d) / A[k][k]; // формула (4)
+
+	}
+
+	cout << "Korni sistemy: " << endl;
+
+	for (int i = 0; i <= n; i++)
+
+		cout << "x[" << i << "]=" << X[i] << " " << endl;
+}
+
+
 void transtA(vector<vector<double>> &A, int n) {
 	vector<vector<double>> At(n + 1, vector<double>(n + 1));
 	for (int i = 0; i <= n; ++i) {
@@ -51,7 +100,6 @@ int main()
 	cin >> n;
 	n -= 1;
 
-
 	vector<vector<double>> A{ {5.18 + alpha, 1.12, 0.95, 1.32, 0.83},
 							  {1.12, 4.28 - alpha, 2.12, 0.57, 0.91},
 							  {0.95, 2.12, 6.13 + alpha, 1.29, 1.57},
@@ -81,6 +129,9 @@ int main()
 
 	vector<double> Y(n + 1);
 
+	gaussStrai(W2, B, Y, 6);
+	
+
 	for (int i = 0; i < n; ++i) {
 		for (int j = 0; j < n; ++j) {
 			B2[i] += A2[i][j];
@@ -93,4 +144,3 @@ int main()
 
 	cout << endl;
 }
-
