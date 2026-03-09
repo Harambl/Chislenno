@@ -1,146 +1,178 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <iomanip>
 #include <algorithm>
 
 using namespace std;
 
-double d, s;
+void choleskyDecomposition(const vector<vector<double>>& A, vector<vector<double>>& W, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j <= i; j++) {
+            double sum = 0;
 
+            if (j == i) {
+                for (int k = 0; k < j; k++) {
+                    sum += pow(W[j][k], 2);
+                }
+                W[j][j] = sqrt(A[j][j] - sum);
+            }
+            else {       
+                for (int k = 0; k < j; k++) {
+                    sum += W[i][k] * W[j][k];
+                }
+                W[i][j] = (A[i][j] - sum) / W[j][j];
+            }
+        }
+    }
+}
 
-void gaussStrai(vector<vector<double>> A, vector<double> B, vector<double> X, int n) {
-	for (int k = 0; k <= n; k++) // прямой ход
-	{
-		for (int j = k + 1; j <= n; j++)
-		{
-			d = A[j][k] / A[k][k]; // формула (1)
+void forwardSubstitution(const vector<vector<double>>& W, const vector<double>& b, vector<double>& y, int n) {
+    for (int i = 0; i < n; i++) {
+        double sum = 0;
+        for (int j = 0; j < i; j++) {
+            sum += W[i][j] * y[j];
+        }
+        y[i] = (b[i] - sum) / W[i][i];
+    }
+}
 
-			for (int i = k; i <= n; i++)
-			{
-
-				A[j][i] = A[j][i] - d * A[k][i]; // формула (2)
-
-			}
-
-			B[j] = B[j] - d * B[k]; // формула (3)
-
-		}
-
-	}
+void backwardSubstitution(const vector<vector<double>>& W, const vector<double>& y, vector<double>& x, int n) {
+    for (int i = n - 1; i >= 0; i--) {
+        double sum = 0;
+        for (int j = i + 1; j < n; j++) {
+            sum += W[j][i] * x[j];  // W^T[i][j] = W[j][i]
+        }
+        x[i] = (y[i] - sum) / W[i][i];
+    }
 }
 
 
-void gaussObr(vector<vector<double>> A, vector<double> B, vector<double> X, int n){
-	for (int k = n; k >= 0; k--) // обратный ход
-	{
-		d = 0;
+double calculateConditionNumber(const vector<vector<double>>& A, int n) {
+    double maxVal = abs(A[0][0]);
+    double minVal = abs(A[0][0]);
 
-		for (int j = k + 1; j <= n; j++)
-		{
+    for (int i = 0; i < n; i++) {
+        double rowSum = 0;
+        for (int j = 0; j < n; j++) {
+            rowSum += abs(A[i][j]);
+        }
+        if (rowSum > maxVal) maxVal = rowSum;
+        if (rowSum < minVal) minVal = rowSum;
+    }
 
-			s = A[k][j] * X[j]; // формула (4)
-
-			d = d + s; // формула (4)
-
-		}
-
-		X[k] = (B[k] - d) / A[k][k]; // формула (4)
-
-	}
-
-	cout << "Korni sistemy: " << endl;
-
-	for (int i = 0; i <= n; i++)
-
-		cout << "x[" << i << "]=" << X[i] << " " << endl;
+    return maxVal / minVal;
 }
 
 
-void transtA(vector<vector<double>> &A, int n) {
-	vector<vector<double>> At(n + 1, vector<double>(n + 1));
-	for (int i = 0; i <= n; ++i) {
-		for (int j = 0; j <= n; ++j) {
-			At[i][j] = A[j][i];
-		}
-	}
-	A = At;
+vector<double> multiplication(vector<vector<double>>& A, vector<double>& B) {
+    vector<double> AB(B.size());
+    for (int i = 0; i < A.size(); ++i) {
+        for (int j = 0; j < A.size(); ++j) {
+            AB[i] += A[i][j] * B[j];
+        }
+    }
+    return AB;
 }
 
-void formW(vector<vector<double>> &N, vector<vector<double>> &A) {
-	double prevw = 0;
-	for (int i = 0; i <= N.size(); ++i) {
-		if (i == 0) {
-			N[i][i] = sqrt(A[i][i]);
-		}
-		else {
-			prevw += N[i - 1][i - 1];
-		}
-		N[i][i] = sqrt(A[i][i] - pow(prevw, 2));
-	}
+vector<double> minusAB(vector<double>& A, vector<double>& B) {
+    vector<double> MAB(A.size());
+    for (int i = 0; i < A.size(); ++i) {
+        MAB[i] = A[i] - B[i];
+    }
+    return MAB;
 }
 
-vector<double> multiplication(vector<vector<double>> &A, vector<double> &B) {
-	vector<double> AB;
-	for (int i = 0; i <= A.size(); ++i) {
-		for (int j = 0; j <= A.size(); ++j) {
-			AB[i] += A[i][j] * B[j];
-		}
-	}
-	return AB;
-}
+int main() {
+    setlocale(LC_ALL, "Russian");
 
+    double alpha = 0.75;   
+    double beta = 0.7;     
+    int delta = 14;        
 
+    cout << "=== ВАРИАНТ 14 ===" << endl;
+    cout << "alpha = " << alpha << ", beta = " << beta << ", delta = " << delta << endl;
 
-int main()
-{
-	double alpha = 0.75;
-	double beta = 0.7;
+    int n1 = 5;
+    vector<vector<double>> A1 = {
+        {5.18 + alpha, 1.12, 0.95, 1.32, 0.83},
+        {1.12, 4.28 - alpha, 2.12, 0.57, 0.91},
+        {0.95, 2.12, 6.13 + alpha, 1.29, 1.57},
+        {1.32, 0.57, 1.29, 4.57 - alpha, 1.25},
+        {0.83, 0.91, 1.57, 1.25, 5.21 + alpha}
+    };
 
-	int n;
-	cin >> n;
-	n -= 1;
+    vector<double> b1 = { 6.19 + beta, 3.21, 4.28 - beta, 6.25, 4.95 + beta };
 
-	vector<vector<double>> A{ {5.18 + alpha, 1.12, 0.95, 1.32, 0.83},
-							  {1.12, 4.28 - alpha, 2.12, 0.57, 0.91},
-							  {0.95, 2.12, 6.13 + alpha, 1.29, 1.57},
-							  {1.32, 0.57, 1.29, 4.57 - alpha, 1.25},
-							  {0.83, 0.91, 1.57, 1.25, 5.21 + alpha} };
+    cout << "\n=== ПЕРВАЯ СИСТЕМА ===" << endl;
 
-	vector<vector<double>> W1(6, vector<double>(6, 0));
+    vector<vector<double>> W1(n1, vector<double>(n1, 0));
+    choleskyDecomposition(A1, W1, n1);
 
-	formW(W1, A);
+    cout << "\nМатрица Холецкого W1:" << endl;
 
-	vector<vector<double>> W2 = W1;
+    vector<double> y1(n1);
+    forwardSubstitution(W1, b1, y1, n1);
 
-	transtA(W2, W2.size());
+    vector<double> x1(n1);
+    backwardSubstitution(W1, y1, x1, n1);
 
-	vector<double> B{ 6.19 + beta, 3.21, 4.28 - beta, 6.25, 4.95 + beta};
+    cout << "\nРешение первой системы:" << endl;
+    for (int i = 0; i < n1; i++) {
+        cout << "x1[" << i << "] = " << fixed << setprecision(6) << x1[i] << endl;
+    }
 
-	vector<vector<double>> A2(n + 1, vector<double>(n + 1));
-	for (int i = 0; i <= n; ++i) {
-		for (int j = 0; j <= n; ++j) {
-			A2[i][j] = 1.0 / (i + j + 1) + 0.1 * 14;
-		}
-	}
+    double cond1 = calculateConditionNumber(A1, n1);
+    cout << "\nЧисло обусловленности A1: " << fixed << setprecision(4) << cond1 << endl;
 
-	vector<double> B2(n + 1);
+    
+    cout << "\n\n=== ВТОРАЯ СИСТЕМА ===" << endl;
 
-	vector<double> X(n + 1);
+    vector<int> sizes = { 5, 7, 9, 11 };
 
-	vector<double> Y(n + 1);
+    for (int n : sizes) {
+        cout << "\n--- Размер n = " << n << " ---" << endl;
 
-	gaussStrai(W2, B, Y, 6);
-	
+        vector<vector<double>> A2(n, vector<double>(n));
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                A2[i][j] = 1.0 / (i + j + 1) + 0.1 * delta;
+            }
+        }
 
-	for (int i = 0; i < n; ++i) {
-		for (int j = 0; j < n; ++j) {
-			B2[i] += A2[i][j];
-		}
-	}
+        vector<double> b2(n, 0);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                b2[i] += A2[i][j];
+            }
+        }
 
-	cin >> n;
-	n -= 1;
+        vector<vector<double>> W2(n, vector<double>(n, 0));
+        choleskyDecomposition(A2, W2, n);
 
+        vector<double> y2(n);
+        forwardSubstitution(W2, b2, y2, n);
 
-	cout << endl;
+        vector<double> x2(n);
+        backwardSubstitution(W2, y2, x2, n);
+
+        double cond = calculateConditionNumber(A2, n);
+
+        cout << "Число обусловленности: " << fixed << setprecision(4) << cond << endl;
+        cout << "Первые значения решения:" << endl;
+        for (int i = 0; i < n; i++) {
+            cout << "x[" << i << "] = " << fixed << setprecision(6) << x2[i] << endl;
+        }
+
+        vector<double> Prov1 = multiplication(A2, x2);
+        vector<double> Prov2 = minusAB(Prov1, b2);
+        cout << "Проверка Ax - B";
+        for (int i = 0; i < n; i++) {
+            cout << "Prov[" << i << "] = " << fixed << setprecision(6) << Prov2[i] << endl;
+        }
+        
+    }
+
+    cout << "\n=== ЗАВЕРШЕНО ===" << endl;
+    return 0;
 }
