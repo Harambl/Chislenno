@@ -6,6 +6,70 @@
 
 using namespace std;
 
+
+double norm1(const vector<vector<double>>& A) {
+    int n = A.size();
+    double maxColSum = 0;
+    for (int j = 0; j < n; j++) {
+        double colSum = 0;
+        for (int i = 0; i < n; i++) {
+            colSum += abs(A[i][j]);
+        }
+        maxColSum = max(maxColSum, colSum);
+    }
+    return maxColSum;
+}
+
+vector<vector<double>> inverseMatrix(vector<vector<double>> A) {
+    int n = A.size();
+    vector<vector<double>> aug(n, vector<double>(2 * n, 0));
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) aug[i][j] = A[i][j];
+        aug[i][n + i] = 1.0;
+    }
+
+    for (int k = 0; k < n; k++) {
+        int maxRow = k;
+        for (int i = k + 1; i < n; i++)
+            if (abs(aug[i][k]) > abs(aug[maxRow][k])) maxRow = i;
+        swap(aug[k], aug[maxRow]);
+
+        if (abs(aug[k][k]) < 1e-12) return {};
+
+        double pivot = aug[k][k];
+        for (int j = 0; j < 2 * n; j++) aug[k][j] /= pivot;
+
+        for (int i = 0; i < n; i++) {
+            if (i != k) {
+                double factor = aug[i][k];
+                for (int j = 0; j < 2 * n; j++)
+                    aug[i][j] -= factor * aug[k][j];
+            }
+        }
+    }
+
+    vector<vector<double>> inv(n, vector<double>(n));
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            inv[i][j] = aug[i][n + j];
+
+    return inv;
+}
+
+double conditionNumber(const vector<vector<double>>& A) {
+    double normA = norm1(A);
+    auto A_inv = inverseMatrix(A);
+
+    if (A_inv.empty()) {
+        cerr << "Ошибка: матрица вырождена!" << endl;
+        return -1.0;
+    }
+
+    double normA_inv = norm1(A_inv);
+    return normA * normA_inv;
+}
+
 void choleskyDecomposition(const vector<vector<double>>& A, vector<vector<double>>& W, int n) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j <= i; j++) {
@@ -41,27 +105,10 @@ void backwardSubstitution(const vector<vector<double>>& W, const vector<double>&
     for (int i = n - 1; i >= 0; i--) {
         double sum = 0;
         for (int j = i + 1; j < n; j++) {
-            sum += W[j][i] * x[j];  // W^T[i][j] = W[j][i]
+            sum += W[j][i] * x[j];
         }
         x[i] = (y[i] - sum) / W[i][i];
     }
-}
-
-
-double calculateConditionNumber(const vector<vector<double>>& A, int n) {
-    double maxVal = abs(A[0][0]);
-    double minVal = abs(A[0][0]);
-
-    for (int i = 0; i < n; i++) {
-        double rowSum = 0;
-        for (int j = 0; j < n; j++) {
-            rowSum += abs(A[i][j]);
-        }
-        if (rowSum > maxVal) maxVal = rowSum;
-        if (rowSum < minVal) minVal = rowSum;
-    }
-
-    return maxVal / minVal;
 }
 
 
@@ -109,8 +156,6 @@ int main() {
     vector<vector<double>> W1(n1, vector<double>(n1, 0));
     choleskyDecomposition(A1, W1, n1);
 
-    cout << "\nМатрица Холецкого W1:" << endl;
-
     vector<double> y1(n1);
     forwardSubstitution(W1, b1, y1, n1);
 
@@ -122,7 +167,7 @@ int main() {
         cout << "x1[" << i << "] = " << fixed << setprecision(6) << x1[i] << endl;
     }
 
-    double cond1 = calculateConditionNumber(A1, n1);
+    double cond1 = conditionNumber(A1);
     cout << "\nЧисло обусловленности A1: " << fixed << setprecision(4) << cond1 << endl;
 
     
@@ -156,7 +201,7 @@ int main() {
         vector<double> x2(n);
         backwardSubstitution(W2, y2, x2, n);
 
-        double cond = calculateConditionNumber(A2, n);
+        double cond = conditionNumber(A2);
 
         cout << "Число обусловленности: " << fixed << setprecision(4) << cond << endl;
         cout << "Первые значения решения:" << endl;
