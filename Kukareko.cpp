@@ -3,12 +3,40 @@
 #include <cmath>
 #include <iomanip>
 #include <algorithm>
+#include <clocale>
 
 using namespace std;
 
-vector<double> IterationMethod(vector<double>& xk, vector<vector<double>>& A, double tau, vector<double> f) {
+vector<double> multiplicationConst( vector<double>& A, double con);
 
+vector<vector<double>> multiplicationConst( vector<vector<double>>& A, double con);
+
+vector<double> multiplication( vector<vector<double>>& A,  vector<double>& B);
+
+vector<vector<double>> minusABe( vector<vector<double>>& A,  vector<vector<double>>& B);
+
+vector<double> minusAB( vector<double>& A,  vector<double>& B);
+
+vector<double> additive( vector<double>& A,  vector<double>& B);
+
+double norm1( const vector<vector<double>>& A);
+
+double vectnorm( const vector<double>& x);
+
+vector<double> IterationMethod( vector<double>& xk, vector<vector<double>>& A, vector<vector<double>>& I, double tau,  vector<double>& f);
+
+
+
+vector<double> IterationMethod(vector<double>& xk, vector<vector<double>>& A, vector<vector<double>>& I,  double tau, vector<double>& f) {
+    vector<double> ftau = multiplicationConst(f, tau);
+    vector<vector<double>> Atau = multiplicationConst(A, tau);
+    vector<vector<double>> AItau = minusABe(I, Atau);
+    vector<double> Axk = multiplication(AItau, xk);
+    vector<double> xk1 = additive(Axk, ftau);
+
+    return xk1;
 }
+
 
 
 double norm1(const vector<vector<double>>& A) {
@@ -24,8 +52,20 @@ double norm1(const vector<vector<double>>& A) {
     return maxColSum;
 }
 
+
+
+double vectnorm(const vector<double>& x) {
+    double sum = 0;
+    for (int i = 0; i < x.size(); ++i) {
+        sum += pow(x[i], 2);
+    }
+    return sqrt(sum);
+}
+
+
+
 vector<double> multiplication(vector<vector<double>>& A, vector<double>& B) {
-    vector<double> AB(B.size());
+    vector<double> AB(B.size(), 0);
     for (int i = 0; i < A.size(); ++i) {
         for (int j = 0; j < A.size(); ++j) {
             AB[i] += A[i][j] * B[j];
@@ -34,13 +74,28 @@ vector<double> multiplication(vector<vector<double>>& A, vector<double>& B) {
     return AB;
 }
 
-void multiplicationConst(vector<vector<double>>& A, double con) {
+
+
+vector<vector<double>> multiplicationConst(vector<vector<double>>& A, double con) {
+    vector<vector<double>> A_new = A;
     for (int i = 0; i < A.size(); ++i) {
         for (int j = 0; j < A.size(); ++j) {
-            A[i][j] *= con;
+            A_new[i][j] *= con;
         }
     }
+    return A_new;
 }
+
+
+vector<double> multiplicationConst(vector<double>& A, double con) {
+    vector<double> A_new = A;
+    for (int i = 0; i < A.size(); ++i) {
+            A_new[i] *= con;
+    }
+    return A_new;
+}
+
+
 
 vector<double> minusAB(vector<double>& A, vector<double>& B) {
     vector<double> MAB(A.size());
@@ -49,6 +104,31 @@ vector<double> minusAB(vector<double>& A, vector<double>& B) {
     }
     return MAB;
 }
+
+
+
+
+vector<vector<double>> minusABe(vector<vector<double>>& A, vector<vector<double>>& B) {
+    vector<vector<double>> MABe(A.size(), vector<double>(A.size(), 0));
+    for (int i = 0; i < A.size(); ++i) {
+        for (int j = 0; j < A.size(); ++j) {
+            MABe[i][j] = A[i][j] - B[i][j];
+        }
+    }
+    return MABe;
+}
+
+
+
+vector<double> additive(vector<double>& A, vector<double>& B) {
+    vector<double> A_new = A;
+    for (int i = 0; i < A.size(); ++i) {
+        A_new[i] += B[i];
+    }
+    return A_new;
+}
+
+
 
 int main() {
     setlocale(LC_ALL, "Russian");
@@ -77,10 +157,88 @@ int main() {
 
     double tau = 2 / norm1(A1);
 
+
     for (double epsilon : epsi) {
 
+        int count = 1;
+        vector<double> xk = x0;
+        vector<double> xk1 = IterationMethod(xk, A1, I, tau, b1);
+
+        cout << "Итерация номер " << count << endl;
+        for (int i = 0; i < xk1.size(); ++i) {
+            cout << "xk1[" << i << "] = " << xk1[i] << endl;
+        }
+        cout << endl;
+
+        while (vectnorm(minusAB(xk, xk1)) >= epsilon) {
+            count += 1;
+            xk = xk1;
+            xk1 = IterationMethod(xk, A1, I, tau, b1);
+            cout << "Итерация номер " << count << endl;
+            for (int i = 0; i < xk1.size(); ++i) {
+                cout << "xk1[" << i << "] = " << xk1[i] << endl;
+            }
+            cout << endl;
+        }
+        cout << "\nТочность (epsilon): " << epsilon << endl;
+        cout << "Финальное решение под номером " << count << endl;
+        for (int i = 0; i < xk1.size(); ++i) {
+            cout << "xk1[" << i << "] = "  << xk1[i] << endl;
+        }
+        cout << endl;
     }
 
+
+    cout << "=== Второй Эксперимент" << endl;
+
+    tau = 0.5;
+    double epsilon = epsi[1];
+    int count = 1;
+
+    cout << "\nТочность (epsilon): " << epsilon << endl;
+
+    for (int i = 0; i < 9; ++i) {
+        cout << "Попытка номер " << i << endl;
+        vector<double> xk = x0;
+        vector<double> xk1 = IterationMethod(xk, A1, I, tau, b1);
+
+        while (vectnorm(minusAB(xk, xk1)) >= epsilon) {
+            count += 1;
+            xk = xk1;
+            xk1 = IterationMethod(xk, A1, I, tau, b1);
+        }
+
+        cout << "Финальное решение под номером " << count << endl;
+        for (int i = 0; i < xk1.size(); ++i) {
+            cout << "xk1[" << i << "] = " << xk1[i] << endl;
+        }
+
+        tau -= 0.05;
+    }
+
+    epsilon = epsi[2];
+    tau = 0.5;
+
+    cout << "\nТочность (epsilon): " << epsilon << endl;
+
+    for (int i = 0; i < 9; ++i) {
+        cout << "Попытка номер " << i << endl;
+        vector<double> xk = x0;
+        vector<double> xk1 = IterationMethod(xk, A1, I, tau, b1);
+
+        while (vectnorm(minusAB(xk, xk1)) >= epsilon) {
+            count += 1;
+            xk = xk1;
+            xk1 = IterationMethod(xk, A1, I, tau, b1);
+        }
+
+        cout << "Финальное решение под номером " << count << endl;
+        for (int i = 0; i < xk1.size(); ++i) {
+            cout << "xk1[" << i << "] = " << xk1[i] << endl;
+        }
+
+        tau -= 0.05;
+    }
 
     cout << "\n=== ЗАВЕРШЕНО ===" << endl;
     return 0;
