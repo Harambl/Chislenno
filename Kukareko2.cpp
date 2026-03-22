@@ -35,10 +35,10 @@ double vectnorm(const vector<double>& x);
 double Iakob_sum(vector<vector<double>>& A, int curr_index, vector<double>& xk);
 
 
-double Zedel_sum1(vector<vector<double>>& A, int curr_index, vector<double>& xk_1);
+double Alow_sum(vector<vector<double>>& A, int curr_index, vector<double>& xk_1);
 
 
-double Zedel_sum2(vector<vector<double>>& A, int curr_index, vector<double>& xk);
+double Avert_sum(vector<vector<double>>& A, int curr_index, vector<double>& xk);
 
 
 vector<double> SimpleIterationMethod(vector<double>& xk, vector<vector<double>>& A, vector<vector<double>>& I, double tau, vector<double>& f);
@@ -50,11 +50,11 @@ vector<double> IakobIterationMethod(vector<double>& xk, vector<vector<double>>& 
 vector<double> ZedelIterationMethod(vector<double>& xk, vector<vector<double>>& A, vector<double>& f);
 
 
-vector<double> RelaxMethod(vector<double>& xk, vector<vector<double>>& A, vector<vector<double>>& I, double tau, vector<double>& f);
+vector<double> RelaxMethod(vector<double>& xk, vector<vector<double>>& A, double omega, vector<double>& f);
 
 
 
-vector<double> SimpleIterationMethod(vector<double>& xk, vector<vector<double>>& A, vector<vector<double>>& I, double omega, vector<double>& f) {
+vector<double> SimpleIterationMethod(vector<double>& xk, vector<vector<double>>& A, vector<vector<double>>& I, double tau, vector<double>& f) {
     vector<double> ftau = multiplicationConst(f, tau);
     vector<vector<double>> Atau = multiplicationConst(A, tau);
     vector<vector<double>> AItau = minusABe(I, Atau);
@@ -66,7 +66,7 @@ vector<double> SimpleIterationMethod(vector<double>& xk, vector<vector<double>>&
 
 
 vector<double> IakobIterationMethod(vector<double>& xk, vector<vector<double>>& A, vector<double>& f) {
-    vector<double> xk1 (xk.size(), 0);
+    vector<double> xk1(xk.size(), 0);
 
     for (int i = 0; i < A.size(); ++i) {
         xk1[i] = (f[i] - Iakob_sum(A, i, xk)) / A[i][i];
@@ -80,24 +80,24 @@ vector<double> ZedelIterationMethod(vector<double>& xk, vector<vector<double>>& 
     vector<double> xk1(xk.size(), 0);
 
     for (int i = 0; i < A.size(); ++i) {
-        xk1[i] = (f[i] - Zedel_sum1(A, i, xk1) - Zedel_sum2(A, i, xk)) / A[i][i];
+        xk1[i] = (f[i] - Alow_sum(A, i, xk1) - Avert_sum(A, i, xk)) / A[i][i];
     }
 
     return xk1;
 }
 
 
-vector<double> RelaxMethod(vector<double>& xk, vector<vector<double>>& A, vector<vector<double>>& I, double tau, vector<double>& f) {
-    vector<double> ftau = multiplicationConst(f, tau);
-    vector<vector<double>> Atau = multiplicationConst(A, tau);
-    vector<vector<double>> AItau = minusABe(I, Atau);
-    vector<double> Axk = multiplication(AItau, xk);
-    vector<double> xk1 = additive(Axk, ftau);
+vector<double> RelaxMethod(vector<double>& xk, vector<vector<double>>& A, double omega, vector<double>& f) {
+    vector<double> xk1(xk.size(), 0);
+
+    for (int i = 0; i < A.size(); ++i) {
+        xk1[i] = (f[i]*omega + xk[i] * (1 - omega) * A[i][i] - Alow_sum(A, i, xk1) * omega - Avert_sum(A, i, xk) * omega) / A[i][i];
+    }
 
     return xk1;
 }
 
-double Iakob_sum(vector<vector<double>>& A, int curr_index, vector<double> &xk) {
+double Iakob_sum(vector<vector<double>>& A, int curr_index, vector<double>& xk) {
     double suma = 0;
     for (int j = 0; j < A.size(); ++j) {
         suma += A[curr_index][j] * xk[j];
@@ -105,17 +105,17 @@ double Iakob_sum(vector<vector<double>>& A, int curr_index, vector<double> &xk) 
     return suma;
 }
 
-double Zedel_sum1(vector<vector<double>>& A, int curr_index, vector<double>& xk_1) {
+double Alow_sum(vector<vector<double>>& A, int curr_index, vector<double>& xk_1) {
     double suma1 = 0;
-    for (int j = 0; j < curr_index - 1; ++j) {
+    for (int j = 0; j < curr_index; ++j) {
         suma1 += A[curr_index][j] * xk_1[j];
     }
     return suma1;
 }
 
-double Zedel_sum2(vector<vector<double>>& A, int curr_index, vector<double>& xk) {
+double Avert_sum(vector<vector<double>>& A, int curr_index, vector<double>& xk) {
     double suma2 = 0;
-    for (int j = curr_index+1; j < A.size(); ++j) {
+    for (int j = curr_index + 1; j < A.size(); ++j) {
         suma2 += A[curr_index][j] * xk[j];
     }
     return suma2;
@@ -320,6 +320,83 @@ int main() {
         }
 
         tau -= 0.05;
+    }
+
+    cout << "=== Третий Эксперимент" << endl;
+
+    count = 1;
+
+    cout << "\nТочность (epsilon): " << epsilon << endl;
+
+    {
+
+        vector<double> xk = x0;
+        vector<double> xk1 = IakobIterationMethod(xk, A1, b1);
+
+        while (vectnorm(minusAB(xk, xk1)) >= epsilon) {
+            count += 1;
+            xk = xk1;
+            xk1 = IakobIterationMethod(xk, A1, b1);
+        }
+
+        cout << "Финальное решение под номером " << count << endl;
+        for (int i = 0; i < xk1.size(); ++i) {
+            cout << "xk1[" << i << "] = " << xk1[i] << endl;
+        }
+    }
+
+
+    cout << "=== Четвертый Эксперимент" << endl;
+
+    count = 1;
+
+    cout << "\nТочность (epsilon): " << epsilon << endl;
+
+    {
+        vector<double> xk = x0;
+        vector<double> xk1 = ZedelIterationMethod(xk, A1, b1);
+
+        while (vectnorm(minusAB(xk, xk1)) >= epsilon) {
+            count += 1;
+            xk = xk1;
+            xk1 = ZedelIterationMethod(xk, A1, b1);
+        }
+
+        cout << "Финальное решение под номером " << count << endl;
+        for (int i = 0; i < xk1.size(); ++i) {
+            cout << "xk1[" << i << "] = " << xk1[i] << endl;
+        }
+    }
+
+
+    cout << "=== Пятый Эксперимент" << endl;
+
+
+    vector<double> omega_vect{ 1.5, 0.0000009, 0.87, 0.45, 0.00034, 0.12341, 0.00000000043, 0.2134, 0.4558907, 1.2, 1.999, 1.6 };
+
+    cout << "\nТочность (epsilon): " << epsilon << endl;
+
+    for (double omega : omega_vect) {
+
+        count = 1;
+
+        cout << "\nOmega: " << omega << endl;
+        {
+
+            vector<double> xk = x0;
+            vector<double> xk1 = RelaxMethod(xk, A1, omega, b1);
+
+            while (vectnorm(minusAB(xk, xk1)) >= epsilon) {
+                count += 1;
+                xk = xk1;
+                xk1 = RelaxMethod(xk, A1, omega, b1);
+            }
+
+            cout << "Финальное решение под номером " << count << endl;
+            for (int i = 0; i < xk1.size(); ++i) {
+                cout << "xk1[" << i << "] = " << xk1[i] << endl;
+            }
+        }
     }
 
     cout << "\n=== ЗАВЕРШЕНО ===" << endl;
