@@ -52,11 +52,6 @@ int main() {
 
     long double k = xn - x_n;
 
-    cout << x_n << ' ' << xn << ' ' << k << endl;
-
-    cout << func(a) << ' ' << func_2pr(a) << endl;
-    cout << func(b) << ' ' << func_2pr(b) << endl;
-
     while (abs(k) > epsilon) {
         x_n = casat(x1_);
         xn = chord(x1_, x1);
@@ -65,7 +60,7 @@ int main() {
         k = xn - x_n;
     }
 
-    cout << "Yspex  " << xn << ' ' << x_n << endl;
+     cout << "Успешно найден корень = " << xn << endl;
     
     return 0;
 }
