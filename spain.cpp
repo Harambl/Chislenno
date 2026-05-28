@@ -35,31 +35,48 @@ int main() {
 
     int n = 2;
 
-     vector<long double> t(n, 0);
+    vector<long double> t(n, 0);
     for (int i = 0; i < n; ++i) {
-        if (i % 2 == 1) {
+        if (i % 2 == 0) {
             t[i] = 0.577350;
         }
-        if (i % 2 == 0) {
+        if (i % 2 == 1) {
             t[i] = -0.577350;
         }
     }
 
-    vector<long double> x(n, 0);
+    vector<long double> x(n + 2, 0);
+    x.push_back(a);
     for (int i = 0; i < n; ++i) {
         x[i] = (b + a) / 2 + (b - a) * t[i] / 2;
+        cout << x[i] << endl;
     }
-    vector<long double> h = { x[1] - x[0] };
+    x.push_back(b);
+    long double h = 1;
 
-    long double inte = h[0] * (func(x[0]) + func(x[1])) - (pow(h[0], 3) / 24) * (a - b);
+    vector<long double> M{func_2pr(a), func_2pr(x[0]), func_2pr(x[1]), func_2pr(b)};
+    for (int i = 0; i < M.size(); ++i) {
+        cout << M[i] << 'j' << endl;
+    }
 
-    long double inte2 = (pow(x[0], 2) / 2) - (pow(x[1], 2) / 2) + (cos(x[0]) - cos(x[1]));
+    long double sum = 0;
+    for (int i = 0; i < M.size() - 1; ++i) {
+         sum += (func(x[i]) + func(x[i+1]))/2 - (pow(h, 3) / 24) * (M[i] + M[i+1]);
+         cout << sum << 's' << endl;
+    }
+    
+    long double inte1 = (func(a) + func(b)) / 2 - (pow(h, 3) / 24) * (func_2pr(a) + func_2pr(b));
 
+    long double inte2 = (pow(b, 2) / 2) - (pow(a, 2) / 2) + (cos(b) - cos(a));
 
     cout << "Вариант 14 (сплайн через моменты, задача интегрирования, n = 2, 2 краевое условие)" << endl;
-    cout << "Шаг равен " << h[0] << endl;
-    cout << "Интеграл 1 равен " << inte << endl;
+    cout << "Шаг равен " << h << endl;
+    cout << "Интеграл 1 равен " << inte1 << endl;
     cout << "Интеграл 2 равен " << inte2 << endl;
+
+    long double inte3 = inte1 - inte2;
+
+    cout << "Разность между теоретическим и сплайновым интегралом = " << inte3 << " погрешность" << endl;
 
     cout << endl;
 
